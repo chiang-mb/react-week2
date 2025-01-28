@@ -62,7 +62,13 @@ function App() {
 
       // 儲存取得的 token 並設定過期時間
       const { token, expired } = res.data;
-      document.cookie = `hexToken=${token}; expires=${new Date(expired)}`;
+
+      // 確認 Token 是否正確
+      console.log("登入成功，取得的 Token:", token);
+
+      // 將 Token 寫入 Cookie
+      document.cookie = `hexToken=${token}; expires=${new Date(expired)}; path=/`;
+      // document.cookie = `hexToken=${token}; expires=${new Date(expired)}`;
 
       axios.defaults.headers.common["Authorization"] = token;
 
@@ -70,7 +76,8 @@ function App() {
 
       setIsAuth(true); // 更新登入狀態
     } catch (error) {
-      alert("登入失敗");
+      console.error("登入失敗:", error.response?.data || error.message);
+      alert("登入失敗，請檢查帳號密碼");
     }
   };
 
@@ -83,7 +90,12 @@ function App() {
 
       setIsAuth(true);
     } catch (error) {
-      console.error(error)
+      console.error("Token 驗證失敗:", error.response?.data || error.message);
+  
+      // 驗證失敗時清除 Token 並提示重新登入
+      document.cookie = "hexToken=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+      alert("Token 已失效，請重新登入");
+      setIsAuth(false);
     }
   };
 
@@ -94,11 +106,16 @@ function App() {
       "$1",
     );
 
-    // 設定 axios 的預設 token
-    axios.defaults.headers.common['Authorization'] = token;
-
-    checkUserLogin();
-  }, [])
+    if (token) {
+      // 設置 axios 的 Authorization Header
+      axios.defaults.headers.common["Authorization"] = token;
+  
+      // 檢查登入狀態
+      checkUserLogin();
+    } else {
+      console.warn("未找到有效的 Token，請重新登入");
+    }
+  }, []);
 
   // Modal 的參考 (ref) 用於操作 DOM 元素
   const productModalRef = useRef(null);
